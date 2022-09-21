@@ -67,6 +67,20 @@
     "outlook_1_Connection_DisplayName": {
       "type": "string",
       "defaultValue": "Outlook.com"
+    },
+    "sharepointonline_1_Connection_Name": {
+      "type": "string",
+      "defaultValue": "sharepointonline"
+    },
+    "sharepointonline_1_Connection_DisplayName": {
+      "type": "string",
+      "defaultValue": "Jarrod.Vecchiet@velrada.com"
+    },
+    "sharepointonline_1_token:TenantId": {
+      "type": "string",
+      "metadata": {
+        "description": "The tenant ID of for the Azure Active Directory application"
+      }
     }
   },
   "variables": {},
@@ -83,24 +97,31 @@
         "definition": {
           "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
           "actions": {
-            "Send_an_email_(V2)": {
+            "Get_item": {
               "type": "ApiConnection",
               "inputs": {
                 "host": {
                   "connection": {
-                    "name": "@parameters('$connections')['outlook']['connectionId']"
+                    "name": "@parameters('$connections')['sharepointonline']['connectionId']"
                   }
                 },
-                "method": "post",
-                "body": {
-                  "To": "vecjar123@outlook.com",
-                  "Subject": "Test",
-                  "Body": "<p>Test</p>",
-                  "Importance": "Normal"
-                },
-                "path": "/v2/Mail"
+                "method": "get",
+                "path": "/datasets/@{encodeURIComponent(encodeURIComponent('https://velrada365.sharepoint.com/sites/VCentral'))}/tables/@{encodeURIComponent(encodeURIComponent('4c528a7c-6e0a-4cae-833f-87990664e7ff'))}/items/@{encodeURIComponent('1')}"
               },
               "runAfter": {}
+            },
+            "Response": {
+              "type": "Response",
+              "kind": "http",
+              "inputs": {
+                "statusCode": 200,
+                "body": "Sharepoint test success"
+              },
+              "runAfter": {
+                "Get_item": [
+                  "Succeeded"
+                ]
+              }
             }
           },
           "parameters": {
@@ -124,17 +145,17 @@
         "parameters": {
           "$connections": {
             "value": {
-              "outlook": {
-                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'outlook')]",
-                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('outlook_1_Connection_Name'))]",
-                "connectionName": "[parameters('outlook_1_Connection_Name')]"
+              "sharepointonline": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'sharepointonline')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('sharepointonline_1_Connection_Name'))]",
+                "connectionName": "[parameters('sharepointonline_1_Connection_Name')]"
               }
             }
           }
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Web/connections', parameters('outlook_1_Connection_Name'))]"
+        "[resourceId('Microsoft.Web/connections', parameters('sharepointonline_1_Connection_Name'))]"
       ]
     },
     {
@@ -147,6 +168,21 @@
           "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'outlook')]"
         },
         "displayName": "[parameters('outlook_1_Connection_DisplayName')]"
+      }
+    },
+    {
+      "type": "MICROSOFT.WEB/CONNECTIONS",
+      "apiVersion": "2018-07-01-preview",
+      "name": "[parameters('sharepointonline_1_Connection_Name')]",
+      "location": "[parameters('logicAppLocation')]",
+      "properties": {
+        "api": {
+          "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', parameters('logicAppLocation'), '/managedApis/', 'sharepointonline')]"
+        },
+        "displayName": "[parameters('sharepointonline_1_Connection_DisplayName')]",
+        "nonSecretParameterValues": {
+          "token:TenantId": "[parameters('sharepointonline_1_token:TenantId')]"
+        }
       }
     }
   ],
